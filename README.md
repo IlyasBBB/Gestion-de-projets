@@ -27,39 +27,29 @@ Bienvenue dans **TicketManager**, une application web développée avec **Django
    ```bash
    git clone [https://github.com/ton-pseudo/ticketmanager.git](https://github.com/IlyasBBB/Gestion-de-projets.git)
    cd Gestion-de-projets
-###Créer un environnement virtuel :
 
-bash
-Copy
-Edit
-python -m venv env
-source env/bin/activate   # sous Windows : env\Scripts\activate
-Installer les dépendances :
+2. **Créer un environnement virtuel :**
 
-bash
-Copy
-Edit
-pip install -r requirements.txt
-Appliquer les migrations :
+   ```bash
 
-bash
-Copy
-Edit
-python manage.py migrate
-Créer un superutilisateur (admin) :
+   python -m venv env
+   source env/bin/activate   # sous Windows : env\Scripts\activate
 
-bash
-Copy
-Edit
-python manage.py createsuperuser
-Lancer le serveur de développement :
+3. **Appliquer les migrations :**
 
-bash
-Copy
-Edit
-python manage.py runserver
-Accéder à l'app via : http://127.0.0.1:8000
+   ```bash
+   python manage.py migrate
 
+4. **Créer un superutilisateur (admin) :**
+
+   ```bash
+   python manage.py createsuperuser
+
+5. **Lancer le serveur de développement :**
+
+   ```bash
+   python manage.py runserver
+   Accéder à l'app via : http://127.0.0.1:8000
 
 ##✅ À faire / Améliorations possibles
 Intégration d’un système de notifications en temps réel (via Django Channels)
