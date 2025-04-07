@@ -1,0 +1,273 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+{% if request.user.admin %}
+    <style>
+        /* Réinitialiser les marges et paddings globaux */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+    
+        /* Réduire la hauteur des cartes */
+        .card {
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            height: 600px;
+            width : 300 px /* Réduit la hauteur */
+        }
+        
+        /* S'assurer que le canvas prend moins de place */
+        .card-body canvas {
+            width: 90% !important; /* Réduire la largeur */
+            height: auto;
+            max-width: 90%; /* Limite la taille maximale du graphe */
+            display: block;
+        }
+
+        .cards {
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            height: 600px;
+            width : 300 px /* Réduit la hauteur */
+
+        }
+        
+        /* S'assurer que le canvas prend moins de place */
+        .cards-body canvas {
+            width: 90% !important; /* Réduire la largeur */
+            height: auto;
+            max-width: 90%; /* Limite la taille maximale du graphe */
+            display: block;
+        }
+    
+        /* Centrer le contenu de la carte et ajuster les graphes */
+        .card-body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+        }
+    
+      
+    
+        /* Options spécifiques pour l'alignement flexbox */
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-right: -15px;
+            margin-left: -15px;
+        }
+    
+        .col-xl-6, .col-xl-12 {
+            position: relative;
+            width: 100%;
+            padding-right: 15px;
+            padding-left: 15px;
+        }
+    
+        /* Gestion de la largeur des colonnes pour différents écrans */
+        @media (min-width: 1200px) {
+            .col-xl-6 {
+                flex: 0 0 50%;
+                max-width: 50%;
+            }
+    
+            .col-xl-12 {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+        }
+    
+        /* En-têtes de la carte */
+        .card-header {
+            padding: 0.75rem 1.25rem;
+            margin-bottom: 0;
+            background-color: rgba(0, 0, 0, 0.03);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+        }
+    
+        .card-title {
+            margin-bottom: 0;
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+    
+        /* Ajuster le conteneur principal */
+        .container-fluid {
+            width: 100%;
+            padding-right: 15px;
+            padding-left: 15px;
+            margin-right: auto;
+            margin-left: auto;
+        }
+    
+        /* Ajuster les marges du contenu */
+        .h3 {
+            font-size: 1.75rem;
+            margin-bottom: 1rem;
+        }
+
+        element.style {
+            display: block;
+            box-sizing: border-box;
+            height: 217.043px !important;
+            width: 212.07px !important;
+        }
+    </style>
+    
+    <script>
+        $(document).ready(function() {
+            $('#id_date_debut').datepicker({
+                format: 'yyyy-mm-dd'
+            });
+            $('#id_date_fin').datepicker({
+                format: 'yyyy-mm-dd'
+            });
+        });
+    </script>
+
+
+
+            <div class="container-fluid p-0">
+                <div class="row">
+                    <div class="col-xl-6">
+                        <div class="card bg-overlay">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Nombre des Tickets par Statuts</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="ticketStatusChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-6">
+                        <div class="card bg-overlay">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Pourcentage des Types</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="ticketTypeChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xl-12">
+                        <div class="cards bg-overlay">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Pourcentage de Clôture des Projets</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="projectClosureChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+    <script src="{% static 'js/app.js' %}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            fetch('/ticket-stats/')
+                .then(response => response.json())
+                .then(data => {
+                    new Chart(document.getElementById('ticketStatusChart'), {
+                        type: 'bar',
+                        data: {
+                            labels: ['En cours', 'Clôturé', 'Rejeté'],
+                            datasets: [{
+                                label: 'Nombre par Status',
+                                data: [data.traitement, data.cloture, data.rejete],
+                                backgroundColor: [
+                                    'rgba(54, 162, 235, 0.2)',
+                                    'rgba(75, 192, 192, 0.2)',
+                                    'rgba(255, 99, 132, 0.2)'
+                                ],
+                                borderColor: [
+                                    'rgba(54, 162, 235, 1)',
+                                    'rgba(75, 192, 192, 1)',
+                                    'rgba(255, 99, 132, 1)'
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                });
+
+            fetch('/ticket-type-percentage/')
+                .then(response => response.json())
+                .then(data => {
+                    new Chart(document.getElementById('ticketTypeChart'), {
+                        type: 'pie',
+                        data: {
+                            labels: ['Anomalies', 'Paramétrages', 'Informations'],
+                            datasets: [{
+                                label: '% of Tickets',
+                                data: [data.anomalies, data.parametrages, data.infos],
+                                backgroundColor: [
+                                    'rgba(255, 99, 132, 0.2)',
+                                    'rgba(54, 162, 235, 0.2)',
+                                    'rgba(255, 206, 86, 0.2)'
+                                ],
+                                borderColor: [
+                                    'rgba(255, 99, 132, 1)',
+                                    'rgba(54, 162, 235, 1)',
+                                    'rgba(255, 206, 86, 1)'
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false
+                        }
+                    });
+                });
+
+            fetch('/project-stats/')
+                .then(response => response.json())
+                .then(data => {
+                    const projectNames = Object.keys(data.project_data);
+                    const projectPercentages = Object.values(data.project_data);
+                    new Chart(document.getElementById('projectClosureChart'), {
+                        type: 'bar',
+                        data: {
+                            labels: projectNames,
+                            datasets: [{
+                                label: '% des Tickets Clôturés',
+                                data: projectPercentages,
+                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                borderColor: 'rgba(75, 192, 192, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                });
+        });
+    </script>
+
+{% endif %}
+{% endblock %}

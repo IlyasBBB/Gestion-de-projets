@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Ajouter Un Membre</title>
+    <link href="{% static 'css/form1.css' %}" rel="stylesheet" type="text/css">
+    <script src="{% static 'js/validation.js' %}"></script>
+    <style>
+        .img {
+            background-image: url("{% static 'img/register_offer.jpg' %}");
+            background-position: center;
+            background-size: cover;
+        }
+        .zf-templateWrapper {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-top: 50px;
+            font-family: Arial, sans-serif;
+        }
+        .form-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .form-label {
+            font-weight: bold;
+            color: #000;
+            margin-right: 20px;
+            font-size: 16px;
+            width: 200px;
+            text-align: right;
+            padding-right: 20px;
+        }
+        .zf-frmTitle {
+            font-size: 24px;
+            color: #000;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .zf-fmFooter {
+            text-align: center;
+        }
+        .zf-tempContDiv input,
+        .zf-tempContDiv textarea,
+        .zf-tempContDiv select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            color: #000;
+        }
+        .zf-tempContDiv input[type="date"] {
+            width: 275%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            color: #000;
+        }
+        .cont {
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            padding: 2rem;
+        }
+        .zf-labelName {
+            font-weight: bold;
+            color: #000;
+            display: inline-block;
+            width: 200px;
+            vertical-align: top;
+        }
+        .zf-errorMessage {
+            color: red;
+        }
+        .candidate-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+        .candidate-info {
+            display: flex;
+            align-items: center;
+        }
+        .candidate-image {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .candidate-details {
+            flex: 1;
+        }
+        .candidate-details strong {
+            font-weight: bold;
+        }
+        .zf-templateWrapper {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-top: 50px;
+        }
+        .zf-tempFrmWrapper {
+            margin-bottom: 20px;
+        }
+        .zf-tempFrmWrapper.zf-decision .zf-tempContDiv {
+            display: flex;
+            align-items: center;
+        }
+        .zf-tempFrmWrapper.zf-decision .zf-tempContDiv label {
+            margin-right: 10px;
+        }
+        .zf-tempFrmWrapper.zf-decision .zf-tempContDiv .zf-instruction {
+            margin-left: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+        .blur-container {
+            backdrop-filter: blur(5px);
+            background-color: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .stage-item {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="img">
+    <div class="zf-templateWidth">
+        <div class="row">
+            <!-- Formulaire de création de membre -->
+            <div class="col-md-6">
+                <form action="{% url 'create_membre' %}" method="post" enctype="multipart/form-data" id="form">
+                    {% csrf_token %}
+                    <div class="zf-templateWrapper">
+                        <ul class="zf-tempHeadBdr">
+                            <li class="zf-tempHeadContBdr">
+                                <h2 class="zf-frmTitle"><em>Ajouter Un Membre</em></h2>
+                                <div class="zf-clearBoth"></div>
+                            </li>
+                        </ul>
+                        <div class="zf-subContWrap zf-leftAlign">
+                            <ul>
+                                <!-- Username -->
+                                <li class="form-row">
+                                    <label class="form-label" for="{{ form.username.id_for_label }}">Nom d'utilisateur :</label>
+                                    <div class="zf-tempContDiv">
+                                        {{ form.username }}
+                                        <p class="zf-errorMessage">{{ form.username.errors }}</p>
+                                    </div>
+                                </li>
+
+                                <!-- Password -->
+                                <li class="form-row">
+                                    <label class="form-label" for="{{ form.password.id_for_label }}">Mot de passe :</label>
+                                    <div class="zf-tempContDiv">
+                                        {{ form.password }}
+                                        <p class="zf-errorMessage">{{ form.password.errors }}</p>
+                                    </div>
+                                </li>
+
+                                <!-- Nom -->
+                                <li class="form-row">
+                                    <label class="form-label" for="{{ form.nom.id_for_label }}">Nom :</label>
+                                    <div class="zf-tempContDiv">
+                                        {{ form.nom }}
+                                        <p class="zf-errorMessage">{{ form.nom.errors }}</p>
+                                    </div>
+                                </li>
+
+                                <!-- Prénom -->
+                                <li class="form-row">
+                                    <label class="form-label" for="{{ form.prenom.id_for_label }}">Prénom :</label>
+                                    <div class="zf-tempContDiv">
+                                        {{ form.prenom }}
+                                        <p class="zf-errorMessage">{{ form.prenom.errors }}</p>
+                                    </div>
+                                </li>
+
+                                <!-- Téléphone -->
+                                <li class="form-row">
+                                    <label class="form-label" for="{{ form.telephone.id_for_label }}">Téléphone :</label>
+                                    <div class="zf-tempContDiv">
+                                        {{ form.telephone }}
+                                        <p class="zf-errorMessage">{{ form.telephone.errors }}</p>
+                                    </div>
+                                </li>
+
+                                <!-- Email -->
+                                <li class="form-row">
+                                    <label class="form-label" for="{{ form.email.id_for_label }}">Email :</label>
+                                    <div class="zf-tempContDiv">
+                                        {{ form.email }}
+                                        <p class="zf-errorMessage">{{ form.email.errors }}</p>
+                                    </div>
+                                </li>
+
+                                <!-- Photo de profil -->
+                                <li class="form-row">
+                                    <label class="form-label" for="{{ form.profil.id_for_label }}">Photo de profil :</label>
+                                    <div class="zf-tempContDiv">
+                                        {{ form.profil }}
+                                        <p class="zf-errorMessage">{{ form.profil.errors }}</p>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                        <ul>
+                            <li class="zf-fmFooter">
+                                <button class="btn btn-primary mt-4" type="submit">Créer</button>
+                            </li>
+                        </ul>
+                    </div>
+                </form>
+            </div>
+            <!-- Liste des membres existants -->
+            <div class="col-md-6">
+                <h2>Membres Existants</h2>
+                <ul class="list-group">
+                    {% for membre in membres %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                    <img src="{{ membre.profil.url }}" alt="Photo de {{ membre.nom }}" class="rounded-circle" width="50" height="50">
+                                
+                                <div class="ml-3">
+                                    <strong>{{ membre.nom }} {{ membre.prenom }}</strong>
+                                </div>
+                            </div>
+                            <form method="POST" action="{% url 'delete_membre' membre.id %}" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce membre ?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+                            </form>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+{% endblock %}

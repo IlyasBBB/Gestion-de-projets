@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<style>
+    body {
+        background-image: url("{% static 'img/cosumar_bg.jpg' %}");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+    }
+    .bg-overlay {
+        background-color: rgba(255, 255, 255, 0.8);
+        border-radius: 10px;
+        padding: 2rem;
+        margin-bottom: 30px;
+    }
+    .blur-container {
+        backdrop-filter: blur(5px);
+        background-color: rgba(255, 255, 255, 0.5);
+        border-radius: 10px;
+        padding: 20px;
+    }
+    .ticket-item {
+        margin-bottom: 2rem;
+        padding: 1rem;
+        background-color: rgba(255, 255, 255, 0.9);
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .ticket-content {
+        flex: 1;
+        margin-right: 1rem;
+    }
+    .ticket-title {
+        color: #000;
+        font-size: 1.25rem;
+    }
+    .ticket-meta {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    .ticket-description {
+        margin-top: 0.5rem;
+    }
+    .ticket-status {
+        padding: 0.25rem 0.5rem;
+        border-radius: 5px;
+        color: #fff;
+        font-weight: bold;
+        text-align: center;
+        min-width: 100px;
+    }
+    .status-declare {
+        background-color: #007bff; /* Bleu pour Déclaré */
+    }
+    .status-analyse {
+        background-color: #ffc107; /* Jaune pour En cours d'analyse */
+    }
+    .status-traitement {
+        background-color: #17a2b8; /* Turquoise pour En cours de traitement */
+    }
+    .status-rejete {
+        background-color: #dc3545; /* Rouge pour Rejeté */
+    }
+    .status-cloture {
+        background-color: #28a745; /* Vert pour Cloturé */
+    }
+    .btn-create {
+        font-size: 1rem;
+        margin-top: 1rem;
+    }
+    .member-avatar {
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+    }
+    .ticket-author {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .author-info {
+        display: flex;
+        flex-direction: column;
+    }
+    .member-avatar {
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        margin-left: 20px;
+    }
+    .filter-section {
+        margin-bottom: 30px;
+    }
+    .pagination {
+        margin-top: 20px;
+    }
+    .pagination a, .pagination span.current {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        margin: 0 0.25rem;
+        background-color: #007bff; /* Bleu pour les boutons */
+        color: #fff;
+        border-radius: 5px;
+        text-decoration: none;
+        font-size: 1rem;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .pagination a:hover {
+        background-color: #0056b3; /* Couleur plus foncée au survol */
+    }
+    
+    .pagination span.current {
+        background-color: #28a745; /* Vert pour la page actuelle */
+        color: #fff;
+        cursor: default;
+    }
+    
+</style>
+
+<div class="container my-5">
+    <div class="row">
+        <!-- Section des filtres à gauche -->
+        <div class="col-md-4 filter-section">
+            <div class="bg-overlay shadow-sm">
+                <h3 class="mb-4 text-primary">Filtres</h3>
+                <form method="get">
+                    <!-- Filtre par projet -->
+                    <div class="form-group">
+                        <label for="project">Projet :</label>
+                        <select id="project" name="project" class="form-control">
+                            <option value="">Tous les projets</option>
+                            {% for project in projects %}
+                                <option value="{{ project.id }}" {% if request.GET.project == project.id|stringformat:"s" %}selected{% endif %}>{{ project.nom }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <!-- Filtre par statut -->
+                    <div class="form-group">
+                        <label for="status">Statut :</label>
+                        <select id="status" name="status" class="form-control">
+                            <option value="">Tous les statuts</option>
+                            <option value="declare" {% if request.GET.status == "declare" %}selected{% endif %}>Déclaré</option>
+                            <option value="analyse" {% if request.GET.status == "analyse" %}selected{% endif %}>En cours d'analyse</option>
+                            <option value="traitement" {% if request.GET.status == "traitement" %}selected{% endif %}>En cours de traitement</option>
+                            <option value="rejete" {% if request.GET.status == "rejete" %}selected{% endif %}>Rejeté</option>
+                            <option value="cloture" {% if request.GET.status == "cloture" %}selected{% endif %}>Cloturé</option>
+                        </select>
+                    </div>
+                    <!-- Trier par -->
+                    <div class="form-group">
+                        <label for="sort_by">Trier par :</label>
+                        <select id="sort_by" name="sort_by" class="form-control">
+                            <option value="">--</option>
+                            <option value="date_creation" {% if request.GET.sort_by == "date_creation" %}selected{% endif %}>Date de création</option>
+                            <option value="Intitulé" {% if request.GET.sort_by == "Intitulé" %}selected{% endif %}>Ordre alphabétique</option>
+                        </select>
+                    </div>
+                    <!-- Ordre de tri -->
+                    <div class="form-group">
+                        <label for="sort_order">Ordre :</label>
+                        <select id="sort_order" name="sort_order" class="form-control">
+                            <option value="asc" {% if request.GET.sort_order == "asc" %}selected{% endif %}>Croissant</option>
+                            <option value="desc" {% if request.GET.sort_order == "desc" %}selected{% endif %}>Décroissant</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Appliquer</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Section des tickets à droite -->
+        <div class="col-md-8">
+            <div class="bg-overlay shadow-sm">
+                <h3 class="mb-4 text-primary">Mes Tickets</h3>
+                <div class="blur-container">
+                    {% for ticket in page_obj %}
+                    <div class="ticket-item">
+                        <div class="ticket-content">
+                            <h4 class="ticket-title"><a href="{% url 'ticket_detail' ticket.id %}">{{ ticket.Intitulé }}</a></h4>
+                            <p class="ticket-meta">Projet : {{ ticket.projet }}</p>
+                            <p class="ticket-meta">Créé le {{ ticket.date_creation }} à {{ ticket.moment_creation }}</p>
+                            <p class="ticket-description">{{ ticket.description|safe }}</p>
+                        </div>
+                        <div class="ticket-status status-{{ ticket.etat }}">
+                            {{ ticket.get_etat_display }}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p>Aucun ticket créé.</p>
+                    {% endfor %}
+                </div>
+                
+                <!-- Pagination -->
+                <div class="pagination">
+                    <span class="step-links">
+                        {% if page_obj.has_previous %}
+                            <a href="?page=1{% if request.GET.project %}&project={{ request.GET.project }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.sort_by %}&sort_by={{ request.GET.sort_by }}{% endif %}{% if request.GET.sort_order %}&sort_order={{ request.GET.sort_order }}{% endif %}">&laquo; Premiere</a>
+                            <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.project %}&project={{ request.GET.project }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.sort_by %}&sort_by={{ request.GET.sort_by }}{% endif %}{% if request.GET.sort_order %}&sort_order={{ request.GET.sort_order }}{% endif %}">Précédente</a>
+                        {% endif %}
+                        <span class="current">
+                            Page {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                        </span>
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}{% if request.GET.project %}&project={{ request.GET.project }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.sort_by %}&sort_by={{ request.GET.sort_by }}{% endif %}{% if request.GET.sort_order %}&sort_order={{ request.GET.sort_order }}{% endif %}">Suivante</a>
+                            <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.project %}&project={{ request.GET.project }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.sort_by %}&sort_by={{ request.GET.sort_by }}{% endif %}{% if request.GET.sort_order %}&sort_order={{ request.GET.sort_order }}{% endif %}">Derniere &raquo;</a>
+                        {% endif %}
+                    </span>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
