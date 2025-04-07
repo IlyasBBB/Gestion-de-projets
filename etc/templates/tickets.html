@@ -1,0 +1,275 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<style>
+    body {
+        background-image: url("{% static 'img/cosumar_bg.jpg' %}");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+    }
+    .bg-overlay {
+        background-color: rgba(255, 255, 255, 0.8);
+        border-radius: 10px;
+        padding: 2rem;
+        margin-bottom: 30px;
+    }
+    .blur-container {
+        backdrop-filter: blur(5px);
+        background-color: rgba(255, 255, 255, 0.5);
+        border-radius: 10px;
+        padding: 20px;
+    }
+    .ticket-item {
+        margin-bottom: 2rem;
+        padding: 1rem;
+        background-color: rgba(255, 255, 255, 0.9);
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .ticket-content {
+        flex: 1;
+        margin-right: 1rem;
+    }
+    .ticket-title {
+        color: #000;
+        font-size: 1.25rem;
+    }
+    .ticket-meta {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    .ticket-description {
+        margin-top: 0.5rem;
+    }
+    .ticket-status {
+        padding: 0.25rem 0.5rem;
+        border-radius: 5px;
+        color: #fff;
+        font-weight: bold;
+        text-align: center;
+        min-width: 100px;
+    }
+    .status-declare {
+        background-color: #007bff; /* Bleu pour Déclaré */
+    }
+    .status-analyse {
+        background-color: #ffc107; /* Jaune pour En cours d'analyse */
+    }
+    .status-traitement {
+        background-color: #17a2b8; /* Turquoise pour En cours de traitement */
+    }
+    .status-rejete {
+        background-color: #dc3545; /* Rouge pour Rejeté */
+    }
+    .status-cloture {
+        background-color: #28a745; /* Vert pour Cloturé */
+    }
+    .btn-create {
+        font-size: 1rem;
+        margin-top: 1rem;
+    }
+    .member-avatar {
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+    }
+    .ticket-author {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .author-info {
+        display: flex;
+        flex-direction: column;
+    }
+    .member-avatar {
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        margin-left: 20px;
+    }
+</style>
+
+{% if request.user.is_staff %}
+<div class="container my-5">
+    <div class="bg-overlay shadow-sm">
+        <h3 class="mb-4 text-primary">Tous les Tickets</h3>
+        <div class="blur-container">
+            <form method="get" class="mb-4">
+                <div class="form-row">
+                    <div class="col-md-4">
+                        <select name="project" class="form-control">
+                            <option value="">Tous les projets</option>
+                            {% for project in projects %}
+                                <option value="{{ project.id }}" {% if request.GET.project == project.id|stringformat:"s" %}selected{% endif %}>{{ project.nom }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select name="status" class="form-control">
+                            <option value="">Tous les statuts</option>
+                            <option value="declare" {% if request.GET.status == "declare" %}selected{% endif %}>Déclaré</option>
+                            <option value="analyse" {% if request.GET.status == "analyse" %}selected{% endif %}>En cours d'analyse</option>
+                            <option value="traitement" {% if request.GET.status == "traitement" %}selected{% endif %}>En cours de traitement</option>
+                            <option value="rejete" {% if request.GET.status == "rejete" %}selected{% endif %}>Rejeté</option>
+                            <option value="cloture" {% if request.GET.status == "cloture" %}selected{% endif %}>Clôturé</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select name="sort_by" class="form-control">
+                            <option value="date_creation" {% if request.GET.sort_by == "date_creation" %}selected{% endif %}>Date de création</option>
+                            <option value="alphabetical" {% if request.GET.sort_by == "alphabetical" %}selected{% endif %}>Ordre alphabétique</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mt-2">
+                        <button type="submit" class="btn btn-primary">Filtrer</button>
+                    </div>
+                </div>
+            </form>
+            
+            {% for ticket in page_obj %}
+                <div class="ticket-item">
+                    <div class="ticket-content">
+                        <h4 class="ticket-title"><a href="{% url 'ticket_detail' ticket.id %}">{{ ticket.Intitulé }}</a></h4>
+                        <p class="ticket-meta">Projet : {{ ticket.projet }}</p>
+                        <p class="ticket-meta">Créé le {{ ticket.date_creation }} à {{ ticket.moment_creation }}</p>
+
+                    </div>
+                    <div class="ticket-status status-{{ ticket.etat }}">
+                        {{ ticket.get_etat_display }}
+                    </div>
+                    <div class="ticket-author">
+                        <img src="{{ ticket.membre.profil.url }}" alt="{{ ticket.membre.nom }}" class="member-avatar">
+                        <div class="author-info">
+                            <p><strong>{{ ticket.membre.nom }}</strong><br>{{ ticket.membre.prenom }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <p>Aucun ticket trouvé.</p>
+            {% endfor %}
+            
+            <!-- Pagination -->
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if request.GET.project %}project={{ request.GET.project }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}sort_by={{ request.GET.sort_by }}&page=1" aria-label="First">
+                                <span aria-hidden="true">&laquo;&laquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if request.GET.project %}project={{ request.GET.project }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}sort_by={{ request.GET.sort_by }}&page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item"><a class="page-link" href="?{% if request.GET.project %}project={{ request.GET.project }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}sort_by={{ request.GET.sort_by }}&page={{ num }}">{{ num }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if request.GET.project %}project={{ request.GET.project }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}sort_by={{ request.GET.sort_by }}&page={{ page_obj.next_page_number }}" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if request.GET.project %}project={{ request.GET.project }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}sort_by={{ request.GET.sort_by }}&page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                                <span aria-hidden="true">&raquo;&raquo;</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="container my-5">
+    <div class="bg-overlay shadow-sm">
+        <h3 class="mb-4 text-primary">Créer un Nouveau Ticket</h3>
+        <form id="ticketForm" method="post" action="{% url 'tickets' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="id_projet">Projet :</label>
+                <select name="projet" id="id_projet" class="form-control">
+                    <option value="" disabled selected>Sélectionner un projet</option>
+                    {% for project in projects %}
+                        <option value="{{ project.id }}">{{ project.nom }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="id_type">Type :</label>
+                <select name="type" id="id_type" class="form-control">
+                    <option value="" disabled selected>Sélectionner un type</option>
+                    <option value="anomalie">Anomalie</option>
+                    <option value="parametrage">Paramétrage du Système</option>
+                    <option value="info">Demande d'Information</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="id_resume">Intitulé :</label>
+                <input type="text" name="Intitulé" id="id_resume" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="id_description">Description :</label>
+                <textarea name="description" id="id_description" class="form-control"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary btn-create">Créer Ticket</button>
+        </form>
+        {% if form.errors %}
+            <ul class="mt-3 text-danger">
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        <li>{{ field }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+</div>
+
+<script src="{% static 'tinymce/tinymce.min.js' %}"></script>
+<script>
+    tinymce.init({
+        selector: '#id_description',
+        plugins: 'link image media',
+        toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help',
+        height: 300,
+        file_picker_callback: function (callback, value, meta) {
+            if (meta.filetype == 'image') {
+                var input = document.createElement('input');
+                input.setAttribute('type', 'file');
+                input.setAttribute('accept', 'image/*');
+                input.onchange = function () {
+                    var file = this.files[0];
+                    var reader = new FileReader();
+                    reader.onload = function () {
+                        var id = 'blobid' + (new Date()).getTime();
+                        var blobCache = tinymce.activeEditor.editorUpload.blobCache;
+                        var base64 = reader.result.split(',')[1];
+                        var blobInfo = blobCache.create(id, file, base64);
+                        blobCache.add(blobInfo);
+                        callback(blobInfo.blobUri(), { title: file.name });
+                    };
+                    reader.readAsDataURL(file);
+                };
+                input.click();
+            }
+        }
+    });
+</script>
+{% endif %}
+{% endblock %}

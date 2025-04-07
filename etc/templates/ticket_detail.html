@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    body {
+        background-image: url("{% static 'img/cosumar_bg.jpg' %}");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+    }
+    .bg-overlay {
+        background-color: rgba(255, 255, 255, 0.8);
+        border-radius: 10px;
+        padding: 2rem;
+        margin-bottom: 30px;
+    }
+    .ticket-detail {
+        margin-top: 2rem;
+        padding: 1rem;
+        background-color: rgba(255, 255, 255, 0.9);
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .ticket-status {
+        padding: 0.25rem 0.5rem;
+        border-radius: 5px;
+        color: #fff;
+        font-weight: bold;
+        text-align: center;
+        min-width: 100px;
+        align-self: flex-end;
+    }
+    .status-declare {
+        background-color: #007bff;
+    }
+    .status-analyse {
+        background-color: #ffc107;
+    }
+    .status-traitement {
+        background-color: #17a2b8;
+    }
+    .status-rejete {
+        background-color: #dc3545;
+    }
+    .status-cloture {
+        background-color: #28a745;
+    }
+</style>
+
+<div class="container my-5">
+    <div class="bg-overlay shadow-sm">
+        <h3 class="mb-4 text-primary">Détails du Ticket</h3>
+        <div class="ticket-detail">
+            <h4 class="ticket-title">{{ ticket.Intitulé }}</h4>
+            <p class="ticket-meta">
+                Créé le {{ ticket.date_creation }} à {{ ticket.moment_creation }}
+            </p>
+            <p class="ticket-description">{{ ticket.description|safe }}</p>
+            <div class="ticket-status status-{{ ticket.etat }}">
+                {{ ticket.get_etat_display }}
+            </div>
+            {% if ticket.etat == 'rejete' %}
+            <div class="mt-4">
+                <h5>Remarque</h5>
+                <p>{{ ticket.remarks }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if request.user.is_staff %}
+        <div class="mt-4">
+            <form id="change-status-form" method="post">
+                {% csrf_token %}
+                <div id="status-buttons">
+                    {% if ticket.etat == 'declare' %}
+                    <button type="button" id="btn-analyse" class="btn btn-warning">Analyser</button>
+                    {% elif ticket.etat == 'analyse' %}
+                    <button type="button" id="btn-rejete" class="btn btn-danger">Rejeter</button>
+                    <button type="button" id="btn-traitement" class="btn btn-info">Traiter</button>
+                    {% elif ticket.etat == 'traitement' %}
+                    <button type="button" id="btn-cloture" class="btn btn-success">Clôturer</button>
+                    {% endif %}
+                </div>
+                <div class="form-group" id="remark-group" style="display:none;">
+                    <label for="remark">Remarque</label>
+                    <textarea name="remark" id="remark" class="form-control"></textarea>
+                </div>
+                <button type="submit" id="submit-status" class="btn btn-primary mt-3" style="display:none;">Confirmer</button>
+            </form>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const buttons = {
+                        'btn-analyse': 'analyse',
+                        'btn-rejete': 'rejete',
+                        'btn-traitement': 'traitement',
+                        'btn-cloture': 'cloture'
+                    };
+
+                    for (let btnId in buttons) {
+                        const button = document.getElementById(btnId);
+                        if (button) {
+                            button.addEventListener('click', function() {
+                                const newState = buttons[btnId];
+                                if (newState === 'rejete') {
+                                    document.getElementById('remark-group').style.display = 'block';
+                                    document.getElementById('submit-status').style.display = 'block';
+                                    document.getElementById('status-buttons').style.display = 'none';
+                                } else {
+                                    updateTicketState(newState);
+                                }
+                            });
+                        }
+                    }
+
+                    document.getElementById('submit-status').addEventListener('click', function(event) {
+                        event.preventDefault();
+                        const remark = document.getElementById('remark').value;
+                        updateTicketState('rejete', remark);
+                    });
+
+                    function updateTicketState(newState, remark = '') {
+                        const formData = new FormData();
+                        formData.append('ticket_id', '{{ ticket.id }}');
+                        formData.append('new_state', newState);
+                        if (remark) {
+                            formData.append('remark', remark);
+                        }
+
+                        fetch("{% url 'update_ticket_state' %}", {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': '{{ csrf_token }}',
+                            },
+                            body: formData,
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                location.reload();
+                            } else {
+                                alert('Erreur : ' + data.message);
+                            }
+                        })
+                        .catch(error => console.error('Erreur:', error));
+                    }
+                });
+            </script>
+        </div>
+        {% endif %}
+        <div class="mt-4">
+            <h4>Commentaires</h4>
+            <div class="comment-section">
+                <!-- Display existing comments -->
+                {% for comment in ticket.comments.all %}
+                <div class="comment">
+                    <p><strong>{{ comment.user.username }}</strong> <small>le {{ comment.created_at }}</small></p>
+                    <p>{{ comment.content }}</p>
+                </div>
+                {% empty %}
+                <p>Aucun commentaire pour le moment.</p>
+                {% endfor %}
+                <!-- Add a new comment -->
+                <form method="post" action="{% url 'add_comment' ticket.id %}">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="comment_content">Ajouter un commentaire</label>
+                        <textarea name="content" id="comment_content" class="form-control"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-3">Ajouter Commentaire</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
