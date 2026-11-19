@@ -64,8 +64,35 @@ class Ticket(models.Model):
     date_creation = models.DateField(auto_now_add=True)
     moment_creation = models.TimeField(auto_now_add=True)
     remarks = models.TextField(blank=True, null=True)
+    # Workflow du ticket : état courant -> états suivants autorisés.
+    TRANSITIONS = {
+        'declare': ['analyse'],
+        'analyse': ['traitement', 'rejete'],
+        'traitement': ['cloture'],
+        'rejete': [],
+        'cloture': [],
+    }
+
     def __str__(self):
         return self.Intitulé
+
+    def etats_suivants(self):
+        return self.TRANSITIONS.get(self.etat, [])
+
+    def peut_passer_a(self, nouvel_etat):
+        return nouvel_etat in self.etats_suivants()
+
+    def changer_etat(self, nouvel_etat, remarque=None):
+        """Applique une transition du workflow. Un rejet exige une remarque."""
+        if not self.peut_passer_a(nouvel_etat):
+            raise ValueError(f"Transition interdite : {self.etat} -> {nouvel_etat}")
+        if nouvel_etat == 'rejete':
+            if not remarque or not remarque.strip():
+                raise ValueError("Un rejet doit être motivé par une remarque.")
+            self.remarks = remarque.strip()
+        self.etat = nouvel_etat
+        self.save()
+
 
 class Comment(models.Model):
     ticket = models.ForeignKey(Ticket, related_name='comments', on_delete=models.CASCADE)
@@ -75,9 +102,7 @@ class Comment(models.Model):
 
     def __str__(self):
         return f'Comment by {self.user.username} on {self.ticket.Intitulé}'
-    
-    from django.db import models
-from django.contrib.auth.models import User
+
 
 class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -87,16 +112,3 @@ class Notification(models.Model):
 
     def __str__(self):
         return self.message
-    
-
-class food(models.Model):
-
-    name = models.TextField()
-    ingredient1 = models.TextField()
-    ingredient2 = models.TextField()
-    ingredient3 = models.TextField()
-    ingredient4 = models.TextField()
-    duration = models.TimeField()
-
-    def __str__(self):
-        return self.name

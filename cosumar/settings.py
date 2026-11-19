@@ -13,8 +13,15 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from pathlib import Path
 import os
 
+from django.core.exceptions import ImproperlyConfigured
+from django.core.management.utils import get_random_secret_key
+from dotenv import load_dotenv
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Variables lues dans un fichier .env s'il existe (voir .env.example).
+load_dotenv(BASE_DIR / ".env")
 
 
 def base(f=''):
@@ -29,16 +36,18 @@ def public_assets():
     return os.path.join(BASE_DIR, os.path.pardir, 'assets')
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
+# Configuration par variables d'environnement (voir .env.example).
+DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'SECRET_KEY_RETIREE'
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
+if not SECRET_KEY:
+    if not DEBUG:
+        raise ImproperlyConfigured("DJANGO_SECRET_KEY est obligatoire quand DJANGO_DEBUG=0.")
+    # En développement, une clé aléatoire suffit (les sessions expirent au redémarrage).
+    SECRET_KEY = get_random_secret_key()
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [h for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h]
+CSRF_TRUSTED_ORIGINS = [o for o in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o]
 
 
 # Application definition
@@ -119,9 +128,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'fr-fr'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Africa/Casablanca'
 
 USE_I18N = True
 
@@ -146,7 +155,6 @@ STATICFILES_FINDERS = [
     "django.contrib.staticfiles.finders.AppDirectoriesFinder",
 ]
 
-CKEDITOR_UPLOAD_PATH = "uploads/"
 
 
 # Ensure STATIC_ROOT is defined if you are using collectstatic
@@ -158,30 +166,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 
+LOGIN_URL = "login"
+
 TINYMCE_DEFAULT_CONFIG = {
-    'height': 360,
-    'width': 1120,
-    'cleanup_on_startup': True,
-    'custom_undo_redo_levels': 20,
-    'selector': 'textarea',
-    'theme': 'modern',
-    'plugins': '''
-        textcolor save link image media preview codesample contextmenu
-        table code lists fullscreen  insertdatetime  nonbreaking
-        contextmenu directionality searchreplace wordcount visualblocks
-        visualchars code fullscreen autolink lists  charmap print  hr
-        anchor pagebreak
-    ''',
-    'toolbar1': '''
-        fullscreen preview bold italic underline | fontselect,
-        fontsizeselect  | forecolor backcolor | alignleft alignright |
-        aligncenter alignjustify | indent outdent bullist numlist table |
-        | link image media | codesample
-    ''',
-    'toolbar2': '''
-        visualblocks visualchars |
-        charmap hr pagebreak nonbreaking anchor |  code |
-        insertdatetime  searchreplace wordcount visualblocks visualchars code
-        fullscreen autolink lists  charmap print  hr
-    ''',
+    "height": 360,
+    "menubar": False,
+    "plugins": "link lists table code wordcount",
+    "toolbar": "undo redo | bold italic underline | bullist numlist | link table | code",
 }
