@@ -1,0 +1,5 @@
+Django==5.2.19
+django-tinymce==5.0.0
+pillow==13.0.0
+python-dotenv==1.2.4
+nh3==0.3.8

@@ -1,42 +1,80 @@
-<!DOCTYPE html>
-<html lang="en">
+{% load static %}<!doctype html>
+<html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <title>{% block title %}My Project{% endblock %}</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
-    <style>
-        .column {
-            float: left;
-            width: 33.33%;
-            padding: 10px;
-            height: 600px;
-            overflow-y: auto;
-            border: 1px solid #ccc;
-        }
-        .column h2 {
-            text-align: center;
-        }
-        .ticket {
-            margin: 5px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            background-color: #fff;
-            cursor: pointer;
-        }
-    </style>
-    {% block extra_css %}{% endblock %}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titre %}ProjeX{% endblock %} · ProjeX</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/projex.css' %}">
+  <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
+  {% block head %}{% endblock %}
 </head>
 <body>
-    {% include 'header.html' %}
-    <div class="container">
-        {% block content %}{% endblock %}
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-cloche" viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></symbol>
+  <symbol id="i-sortie" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-poubelle" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></symbol>
+  <symbol id="i-retour" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></symbol>
+  <symbol id="i-fleche" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></symbol>
+  <symbol id="i-alerte" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></symbol>
+</svg>
+<header class="barre">
+  <div class="barre-in">
+    <a class="marque" href="{% url 'blank' %}"><i aria-hidden="true"></i>ProjeX</a>
+    {% with nom=request.resolver_match.url_name %}
+    <nav class="nav" aria-label="Navigation principale">
+      <a href="{% url 'blank' %}" {% if nom == 'blank' %}aria-current="page"{% endif %}>Tableau</a>
+      <a href="{% url 'tickets' %}" {% if nom == 'tickets' or nom == 'ticket_detail' %}aria-current="page"{% endif %}>Tickets</a>
+      {% if request.user.is_staff %}
+        <a href="{% url 'projet' %}" {% if nom == 'projet' %}aria-current="page"{% endif %}>Projets</a>
+        <a href="{% url 'create_membre' %}" {% if nom == 'create_membre' %}aria-current="page"{% endif %}>Membres</a>
+      {% else %}
+        <a href="{% url 'member-projects' %}" {% if nom == 'member-projects' %}aria-current="page"{% endif %}>Mes projets</a>
+      {% endif %}
+    </nav>
+    {% endwith %}
+    <div class="barre-droite">
+      <a class="andon{% if andon %} allume{% endif %}" href="{% url 'tickets' %}?status=declare"
+         title="Tickets déclarés en attente d'analyse">
+        <span class="lampe" aria-hidden="true"></span><span>{{ andon }} en attente</span>
+      </a>
+      <details class="menu" id="menu-notifs">
+        <summary aria-label="Notifications">
+          <svg class="icone"><use href="#i-cloche"/></svg>
+          {% if notifications %}<span class="pastille">{{ notifications|length }}</span>{% endif %}
+        </summary>
+        <div class="menu-panneau">
+          {% for n in notifications %}<p>{{ n.message }}</p>{% empty %}<p>Aucune nouvelle notification.</p>{% endfor %}
+          {% if notifications %}
+            <form method="post" action="{% url 'notifications_lues' %}" data-ajax>{% csrf_token %}
+              <button class="btn discret" type="submit">Tout marquer comme lu</button>
+            </form>
+          {% endif %}
+        </div>
+      </details>
+      <a class="andon" href="{% url 'mylogout' %}" title="Se déconnecter">
+        <span>{{ request.user.get_username }}</span><svg class="icone"><use href="#i-sortie"/></svg>
+      </a>
     </div>
-    
-
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
-    {% include 'footer.html' %}
-    {% block extra_js %}{% endblock %}
+  </div>
+</header>
+<main class="page">
+  {% if messages %}
+    <ul class="messages">{% for m in messages %}<li class="{{ m.tags }}">{{ m }}</li>{% endfor %}</ul>
+  {% endif %}
+  {% block contenu %}{% endblock %}
+</main>
+<script>
+  // Marquer les notifications comme lues sans recharger la page.
+  document.querySelectorAll('form[data-ajax]').forEach(f => f.addEventListener('submit', async e => {
+    e.preventDefault();
+    await fetch(f.action, { method: 'POST', body: new FormData(f) });
+    location.reload();
+  }));
+</script>
+{% block scripts %}{% endblock %}
 </body>
 </html>

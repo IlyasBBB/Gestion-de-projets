@@ -10,8 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
-from pathlib import Path
 import os
+from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management.utils import get_random_secret_key
@@ -47,6 +47,9 @@ if not SECRET_KEY:
     SECRET_KEY = get_random_secret_key()
 
 ALLOWED_HOSTS = [h for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h]
+# Affiche les comptes de démonstration sur la page de connexion.
+DEMO_MODE = os.environ.get("DJANGO_DEMO", "1" if DEBUG else "0") == "1"
+
 CSRF_TRUSTED_ORIGINS = [o for o in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o]
 
 
@@ -140,7 +143,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = '/COSUMAR/etc/assets/'
+STATIC_URL = '/static/'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -171,6 +174,8 @@ LOGIN_URL = "login"
 TINYMCE_DEFAULT_CONFIG = {
     "height": 360,
     "menubar": False,
+    "promotion": False,
+    "branding": False,
     "plugins": "link lists table code wordcount",
     "toolbar": "undo redo | bold italic underline | bullist numlist | link table | code",
 }

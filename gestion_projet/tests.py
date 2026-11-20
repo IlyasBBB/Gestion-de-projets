@@ -227,3 +227,19 @@ class ConnexionTests(DonneesDeBase):
     def test_connexion_reussie(self):
         reponse = self.client.post(reverse('login'), {'username': 'alice', 'password': 'motdepasse-test-123'})
         self.assertRedirects(reponse, reverse('blank'), fetch_redirect_response=False)
+
+
+class InterfaceTests(DonneesDeBase):
+    def test_script_retire_de_la_description(self):
+        self.connecter(self.alice.user)
+        self.client.post(reverse('tickets'), {'projet': self.projet_a.id, 'type': 'info', 'Intitulé': 'XSS',
+                                              'description': '<p>ok</p><script>alert(1)</script>'})
+        self.assertEqual(Ticket.objects.get().description, '<p>ok</p>')
+
+    def test_tableau_range_les_tickets_par_etat(self):
+        ticket = self.nouveau_ticket(etat='analyse')
+        self.connecter(self.admin_user)
+        colonnes = {c['code']: c['tickets'] for c in self.client.get(reverse('blank')).context['colonnes']}
+        self.assertEqual(list(colonnes), ['declare', 'analyse', 'traitement', 'cloture', 'rejete'])
+        self.assertEqual(colonnes['analyse'], [ticket])
+        self.assertContains(self.client.get(reverse('blank')), ticket.numero)

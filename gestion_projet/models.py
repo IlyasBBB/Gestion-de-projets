@@ -1,5 +1,5 @@
-from django.db import models
 from django.contrib.auth.models import User
+from django.db import models
 from tinymce.models import HTMLField
 
 
@@ -11,13 +11,14 @@ class Admin(models.Model):
     email = models.EmailField()
     profil = models.ImageField(upload_to='uploads/Manager_', default='uploads/Manager_/unknown_pdp.png')
 
+    def __str__(self):
+        return f"{self.prenom} {self.nom}"
+
     def save(self, *args, **kwargs):
+        # Un administrateur ProjeX est un utilisateur « staff » de Django.
         self.user.is_staff = True
         self.user.save()
         super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.prenom} {self.nom}"
 
 class Membre(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -39,8 +40,8 @@ class Projet(models.Model):
     file = models.FileField(null=True, blank=True)
     def __str__(self):
         return self.nom
-    
-    
+
+
 class Ticket(models.Model):
     TYPE_CHOICES = [
         ('anomalie', 'Anomalie'),
@@ -52,7 +53,7 @@ class Ticket(models.Model):
         ('analyse', 'En cours d\'analyse'),
         ('traitement', 'En cours de traitement'),
         ('rejete', 'Rejeté'),
-        ('cloture', 'Cloturé')
+        ('cloture', 'Clôturé')
     ]
 
     projet = models.ForeignKey('Projet', on_delete=models.CASCADE)
@@ -63,7 +64,8 @@ class Ticket(models.Model):
     membre = models.ForeignKey('Membre', on_delete=models.CASCADE, null=True)
     date_creation = models.DateField(auto_now_add=True)
     moment_creation = models.TimeField(auto_now_add=True)
-    remarks = models.TextField(blank=True, null=True)
+    remarks = models.TextField(blank=True, default='')
+
     # Workflow du ticket : état courant -> états suivants autorisés.
     TRANSITIONS = {
         'declare': ['analyse'],
@@ -75,6 +77,10 @@ class Ticket(models.Model):
 
     def __str__(self):
         return self.Intitulé
+
+    @property
+    def numero(self):
+        return f"PX-{self.pk:03d}"
 
     def etats_suivants(self):
         return self.TRANSITIONS.get(self.etat, [])

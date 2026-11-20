@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
@@ -109,7 +110,12 @@ def pourcentage(part, total):
 
 @login_required
 def blank(request):
-    return render(request, 'blank.html')
+    """Tableau d'atelier : une colonne par état du workflow."""
+    tickets = tickets_visibles(request.user).select_related('projet', 'membre').order_by('-date_creation', '-id')
+    libelles = dict(Ticket.STATUS_CHOICES)
+    ordre = ['declare', 'analyse', 'traitement', 'cloture', 'rejete']  # le rejet est une sortie latérale
+    colonnes = [{'code': c, 'libelle': libelles[c], 'tickets': [t for t in tickets if t.etat == c]} for c in ordre]
+    return render(request, 'blank.html', {'colonnes': colonnes, 'transitions': Ticket.TRANSITIONS})
 
 
 @admin_required
@@ -196,14 +202,9 @@ def tickets(request):
 
 @login_required
 def list_tickets(request):
-    membre = membre_courant(request.user)
-    if membre is None:
-        return redirect('tickets')
-    liste, sort_by = filtrer_et_trier(request, tickets_visibles(request.user).select_related('projet'))
-    page_obj = Paginator(liste, 10).get_page(request.GET.get('page'))
-    return render(request, 'list_tickets.html', {
-        'page_obj': page_obj, 'projects': membre.projet_set.all(), 'sort_by': sort_by,
-    })
+    # Ancienne page « tickets créés » : la liste des tickets la remplace (mêmes filtres).
+    query = request.GET.urlencode()
+    return redirect(reverse('tickets') + (f'?{query}' if query else ''))
 
 
 @login_required

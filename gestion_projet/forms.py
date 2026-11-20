@@ -1,3 +1,4 @@
+import nh3
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
@@ -39,12 +40,14 @@ class MembreCreationForm(forms.ModelForm):
 
 
 class ProjetCreationForm(forms.ModelForm):
-    date_debut = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
-    date_fin = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
+    date_debut = forms.DateField(label="Date de début", widget=forms.DateInput(attrs={'type': 'date'}))
+    date_fin = forms.DateField(label="Date de fin", widget=forms.DateInput(attrs={'type': 'date'}))
 
     class Meta:
         model = Projet
         fields = ['nom', 'description', 'date_debut', 'date_fin', 'membres', 'file']
+        labels = {'file': "Pièce jointe (facultative)"}
+        help_texts = {'membres': "Ctrl + clic pour en sélectionner plusieurs."}
 
     def clean(self):
         cleaned = super().clean()
@@ -59,11 +62,17 @@ class TicketForm(forms.ModelForm):
         model = Ticket
         fields = ['projet', 'type', 'Intitulé', 'description']
 
+    def clean_description(self):
+        # La description est du HTML (éditeur TinyMCE) : on retire scripts et attributs dangereux.
+        return nh3.clean(self.cleaned_data['description'])
+
     def __init__(self, *args, projets=None, **kwargs):
         super().__init__(*args, **kwargs)
         # Un membre ne peut déclarer un ticket que sur un projet auquel il est affecté.
         if projets is not None:
             self.fields['projet'].queryset = projets
+        self.fields['projet'].empty_label = "Choisir un projet"
+        self.fields['type'].choices = [('', "Choisir un type")] + Ticket.TYPE_CHOICES
 
 
 class CommentForm(forms.ModelForm):
