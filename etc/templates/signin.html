@@ -1,83 +1,54 @@
-{% load static %}
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Login</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700&display=swap" rel="stylesheet">
-
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="{% static 'css/style_log.css' %}?v={{ timestamp }}">
-  </head>
-  <body class="img js-fullheight">
-    <style>
-        .img {
-          background-image: url("{% static 'img/cosumar_bg.jpg' %}");
-          background-position: center; /* This centers the image within the element */
-          background-repeat: no-repeat; /* This prevents the image from repeating */
-          height: 100vh; /* Full viewport height */
-          width: 100%; /* Full viewport width */
-        }
-      </style>
-      
-    <section class="ftco-section">
-        <div><br><br><br><br></div>
-    </section>
-    <section class="ftco-section">
-      <div class="container">
-        <div class="logo-container">
-          <img src="{% static 'img/Cosumar_logo_ssbg.png' %}" alt="Logo">
-        </div>
-        <div class="row justify-content-center">
-          <div class="col-md-6 col-lg-4">
-            <div class="login-wrap p-0">
-              <h3 class="mb-4 text-center" style="font-weight: bold; font-family: 'Dubai', sans-serif;">Bienvenue sur ProjeX</h3>
-              <form method="POST" action="#" class="signin-form">
-                {% csrf_token %}
-                <div class="form-group">
-                  <input type="text" name="username" class="form-control" placeholder="Username" required>
-                </div>
-                <div class="form-group">
-                  <input id="password-field" type="password" name="password" class="form-control" placeholder="Password" required>
-                  <span toggle="#password-field" class="fa fa-fw fa-eye field-icon toggle-password"></span>
-                </div>
-                <div class="form-group">
-                  <button type="submit" class="form-control btn btn-primary submit px-3">Se Connecter</button>
-                </div>
-                <div class="form-group d-md-flex">
-                  <div class="w-50">
-                    <label class="checkbox-wrap checkbox-primary">Remember Me
-                      <input type="checkbox" name="remember">
-                      <span class="checkmark"></span>
-                    </label>
-                  </div>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
+{% load static %}<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Connexion · ProjeX</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/projex.css' %}">
+  <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
+</head>
+<body>
+<div class="connexion">
+  <section class="connexion-scene" aria-hidden="true">
+    <span class="marque"><i></i>ProjeX</span>
+    <div class="mini-board">
+      <div class="mini-col"><b>Déclaré</b><div class="mini-fiche voyage" style="--c:var(--anomalie)"></div><div class="mini-fiche" style="--c:var(--parametrage); margin-top:84px"></div></div>
+      <div class="mini-col"><b>Analyse</b><div class="mini-fiche" style="--c:var(--info); margin-top:84px"></div></div>
+      <div class="mini-col"><b>Traitement</b><div class="mini-fiche" style="--c:var(--parametrage); margin-top:84px"></div><div class="mini-fiche" style="--c:var(--anomalie)"></div></div>
+      <div class="mini-col"><b>Clôturé</b><div class="mini-fiche" style="--c:var(--info); margin-top:84px"></div></div>
+    </div>
+    <p>Anomalies, paramétrages et demandes d'information : chaque ticket avance de colonne en colonne jusqu'à sa clôture.</p>
+  </section>
+  <section class="connexion-form">
+    <div class="boite">
+      <h1>Connexion</h1>
+      <p class="sous">Suivi des tickets de l'équipe SI.</p>
+      {% if messages %}<ul class="messages">{% for m in messages %}<li class="{{ m.tags }}"><svg class="icone" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>{{ m }}</li>{% endfor %}</ul>{% endif %}
+      <form method="post" class="form">{% csrf_token %}
+        <div class="champ"><label for="id_username">Identifiant</label><input id="id_username" name="username" autocomplete="username" required autofocus></div>
+        <div class="champ"><label for="id_password">Mot de passe</label><input id="id_password" name="password" type="password" autocomplete="current-password" required></div>
+        <button class="btn jaune" type="submit" style="justify-content:center">Se connecter</button>
+      </form>
+      {% if demo %}
+      <div class="comptes-demo">
+        <h2>Comptes de démonstration</h2>
+        <p style="margin:0 0 6px">Mot de passe : <b>projex-demo</b>. Données fictives.</p>
+        <button type="button" data-u="admin">admin</button> : administrateur, fait avancer les tickets<br>
+        <button type="button" data-u="salma">salma</button> : membre, déclare et suit ses tickets
       </div>
-    </section>
-    <section class="ftco-section">
-        <div><br><br><br><br><br></div>
-    </section>
-
-    <script src="{% static 'js/jquery.min_login.js' %}"></script>
-    <script src="{% static 'js/popper_login.js' %}"></script>
-    <script src="{% static 'js/bootstrap.min_login.js' %}"></script>
-    <script src="{% static 'js/main_login.js' %}"></script>
-    <script>
-      $(".toggle-password").click(function() {
-        $(this).toggleClass("fa-eye fa-eye-slash");
-        var input = $($(this).attr("toggle"));
-        if (input.attr("type") == "password") {
-          input.attr("type", "text");
-        } else {
-          input.attr("type", "password");
-        }
-      });
-    </script>
-  </body>
+      <script>
+        document.querySelectorAll('[data-u]').forEach(b => b.addEventListener('click', () => {
+          document.getElementById('id_username').value = b.dataset.u;
+          document.getElementById('id_password').value = 'projex-demo';
+          document.getElementById('id_password').focus();
+        }));
+      </script>
+      {% endif %}
+    </div>
+  </section>
+</div>
+</body>
 </html>

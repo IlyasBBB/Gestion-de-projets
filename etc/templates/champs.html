@@ -1,0 +1,9 @@
+{% for erreur in form.non_field_errors %}<p class="champ"><span class="erreur">{{ erreur }}</span></p>{% endfor %}
+{% for champ in form %}
+<div class="champ">
+  <label for="{{ champ.id_for_label }}">{{ champ.label }}</label>
+  {{ champ }}
+  {% if champ.help_text %}<div class="aide">{{ champ.help_text|safe }}</div>{% endif %}
+  {% for erreur in champ.errors %}<div class="erreur">{{ erreur }}</div>{% endfor %}
+</div>
+{% endfor %}

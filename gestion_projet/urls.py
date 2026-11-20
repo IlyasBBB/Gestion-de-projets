@@ -1,4 +1,5 @@
 from django.urls import path
+
 from . import views
 
 urlpatterns = [
@@ -15,6 +16,7 @@ urlpatterns = [
     path('ticket/<int:ticket_id>/add_comment/', views.add_comment, name='add_comment'),
     path('list_tickets/', views.list_tickets, name='list_tickets'),
 
+    path('notifications/lues/', views.mark_notifications_read, name='notifications_lues'),
     path('ticket-stats/', views.ticket_stats, name='ticket-stats'),
     path('ticket-type-percentage/', views.ticket_type_percentage, name='ticket-type-percentage'),
     path('project-stats/', views.project_stats, name='project-stats'),

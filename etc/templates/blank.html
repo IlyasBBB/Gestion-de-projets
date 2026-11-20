@@ -1,273 +1,141 @@
 {% extends 'base.html' %}
-{% load static %}
-{% block content %}
-{% if request.user.admin %}
-    <style>
-        /* Réinitialiser les marges et paddings globaux */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-    
-        /* Réduire la hauteur des cartes */
-        .card {
-            background-color: rgba(255, 255, 255, 0.8);
-            border-radius: 10px;
-            padding: 1rem;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            height: 600px;
-            width : 300 px /* Réduit la hauteur */
-        }
-        
-        /* S'assurer que le canvas prend moins de place */
-        .card-body canvas {
-            width: 90% !important; /* Réduire la largeur */
-            height: auto;
-            max-width: 90%; /* Limite la taille maximale du graphe */
-            display: block;
-        }
+{% block titre %}Tableau{% endblock %}
+{% block contenu %}
+<div class="entete">
+  <div>
+    <h1>Tableau d'atelier</h1>
+    <p>{% if request.user.is_staff %}Glissez une fiche vers la colonne suivante pour faire avancer le ticket.{% else %}Vos tickets, rangés par état.{% endif %}</p>
+  </div>
+  <div class="legende" aria-label="Types de ticket">
+    <span><i class="puce t-anomalie"></i>Anomalie</span>
+    <span><i class="puce t-parametrage"></i>Paramétrage</span>
+    <span><i class="puce t-info"></i>Demande d'information</span>
+    {% if not request.user.is_staff %}<a class="btn jaune" href="{% url 'tickets' %}#declarer"><svg class="icone"><use href="#i-plus"/></svg>Déclarer un ticket</a>{% endif %}
+  </div>
+</div>
 
-        .cards {
-            background-color: rgba(255, 255, 255, 0.8);
-            border-radius: 10px;
-            padding: 1rem;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            height: 600px;
-            width : 300 px /* Réduit la hauteur */
+<div class="board" id="board">
+  {% for col in colonnes %}
+  <section class="colonne" data-etat="{{ col.code }}" aria-labelledby="col-{{ col.code }}">
+    <h2 id="col-{{ col.code }}">{{ col.libelle }} <span data-compte>{{ col.tickets|length }}</span></h2>
+    {% for t in col.tickets %}
+      <a class="fiche t-{{ t.type }}" href="{% url 'ticket_detail' t.id %}" data-id="{{ t.id }}" data-etat="{{ t.etat }}"
+         {% if request.user.is_staff %}draggable="true"{% endif %} style="view-transition-name: fiche-{{ t.id }}">
+        <span class="aimant" aria-hidden="true"></span>
+        <span class="num">{{ t.numero }}</span> <span class="proj">· {{ t.projet.nom }}</span>
+        <h3>{{ t.Intitulé }}</h3>
+        <span class="pied"><span>{{ t.get_type_display }}</span><span>{{ t.membre.prenom|default:"—" }} {{ t.membre.nom|first|default:"" }}.</span></span>
+      </a>
+    {% empty %}
+      <p class="vide">Aucun ticket</p>
+    {% endfor %}
+  </section>
+  {% endfor %}
+</div>
 
-        }
-        
-        /* S'assurer que le canvas prend moins de place */
-        .cards-body canvas {
-            width: 90% !important; /* Réduire la largeur */
-            height: auto;
-            max-width: 90%; /* Limite la taille maximale du graphe */
-            display: block;
-        }
-    
-        /* Centrer le contenu de la carte et ajuster les graphes */
-        .card-body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 0;
-        }
-    
-      
-    
-        /* Options spécifiques pour l'alignement flexbox */
-        .row {
-            display: flex;
-            flex-wrap: wrap;
-            margin-right: -15px;
-            margin-left: -15px;
-        }
-    
-        .col-xl-6, .col-xl-12 {
-            position: relative;
-            width: 100%;
-            padding-right: 15px;
-            padding-left: 15px;
-        }
-    
-        /* Gestion de la largeur des colonnes pour différents écrans */
-        @media (min-width: 1200px) {
-            .col-xl-6 {
-                flex: 0 0 50%;
-                max-width: 50%;
-            }
-    
-            .col-xl-12 {
-                flex: 0 0 100%;
-                max-width: 100%;
-            }
-        }
-    
-        /* En-têtes de la carte */
-        .card-header {
-            padding: 0.75rem 1.25rem;
-            margin-bottom: 0;
-            background-color: rgba(0, 0, 0, 0.03);
-            border-bottom: 1px solid rgba(0, 0, 0, 0.125);
-        }
-    
-        .card-title {
-            margin-bottom: 0;
-            font-size: 1.25rem;
-            font-weight: bold;
-        }
-    
-        /* Ajuster le conteneur principal */
-        .container-fluid {
-            width: 100%;
-            padding-right: 15px;
-            padding-left: 15px;
-            margin-right: auto;
-            margin-left: auto;
-        }
-    
-        /* Ajuster les marges du contenu */
-        .h3 {
-            font-size: 1.75rem;
-            margin-bottom: 1rem;
-        }
+{% if request.user.is_staff %}
+<div class="indicateurs">
+  <section class="panneau">
+    <h2>Répartition par type</h2>
+    <div class="barres" id="stats-types"></div>
+  </section>
+  <section class="panneau">
+    <h2>Taux de clôture par projet</h2>
+    <div class="barres" id="stats-projets"></div>
+  </section>
+</div>
 
-        element.style {
-            display: block;
-            box-sizing: border-box;
-            height: 217.043px !important;
-            width: 212.07px !important;
-        }
-    </style>
-    
-    <script>
-        $(document).ready(function() {
-            $('#id_date_debut').datepicker({
-                format: 'yyyy-mm-dd'
-            });
-            $('#id_date_fin').datepicker({
-                format: 'yyyy-mm-dd'
-            });
-        });
-    </script>
+<dialog id="rejet">
+  <form method="dialog" id="rejet-form">
+    <h2>Motiver le rejet</h2>
+    <div class="champ"><label for="rejet-remarque">Remarque transmise au déclarant</label>
+      <textarea id="rejet-remarque" rows="4" required></textarea></div>
+    <div class="btns"><button class="btn discret" value="annuler" formnovalidate>Annuler</button>
+      <button class="btn danger" value="ok">Rejeter le ticket</button></div>
+  </form>
+</dialog>
+{{ transitions|json_script:"transitions" }}
+{% endif %}
+{% endblock %}
 
+{% block scripts %}
+{% if request.user.is_staff %}
+<script>
+(() => {
+  const transitions = JSON.parse(document.getElementById('transitions').textContent);
+  const csrf = '{{ csrf_token }}';
+  const colonnes = [...document.querySelectorAll('.colonne')];
+  let fiche = null;
 
+  function barre(libelle, valeur) {
+    return `<div class="barre-stat"><span>${libelle}</span><span class="jauge"><i data-w="${valeur}"></i></span><b>${valeur} %</b></div>`;
+  }
+  function animerJauges(conteneur) {
+    requestAnimationFrame(() => conteneur.querySelectorAll('i[data-w]').forEach(i => i.style.width = i.dataset.w + '%'));
+  }
+  async function chargerStats() {
+    const types = await (await fetch('{% url "ticket-type-percentage" %}')).json();
+    const t = document.getElementById('stats-types');
+    t.innerHTML = barre('Anomalies', types.anomalies) + barre('Paramétrages', types.parametrages) + barre('Informations', types.infos);
+    animerJauges(t);
+    const projets = (await (await fetch('{% url "project-stats" %}')).json()).project_data;
+    const p = document.getElementById('stats-projets');
+    const lignes = Object.entries(projets).map(([nom, v]) => barre(nom, v));
+    p.innerHTML = lignes.join('') || '<p class="vide">Aucun ticket pour le moment.</p>';
+    animerJauges(p);
+  }
+  chargerStats();
 
-            <div class="container-fluid p-0">
-                <div class="row">
-                    <div class="col-xl-6">
-                        <div class="card bg-overlay">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">Nombre des Tickets par Statuts</h5>
-                            </div>
-                            <div class="card-body">
-                                <canvas id="ticketStatusChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-xl-6">
-                        <div class="card bg-overlay">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">Pourcentage des Types</h5>
-                            </div>
-                            <div class="card-body">
-                                <canvas id="ticketTypeChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-xl-12">
-                        <div class="cards bg-overlay">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">Pourcentage de Clôture des Projets</h5>
-                            </div>
-                            <div class="card-body">
-                                <canvas id="projectClosureChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+  function demanderRemarque() {
+    const d = document.getElementById('rejet');
+    document.getElementById('rejet-remarque').value = '';
+    d.showModal();
+    return new Promise(ok => d.addEventListener('close', () => ok(d.returnValue === 'ok' ? document.getElementById('rejet-remarque').value : null), { once: true }));
+  }
 
+  async function deplacer(f, cible) {
+    const nouvelEtat = cible.dataset.etat;
+    const donnees = new FormData();
+    donnees.append('ticket_id', f.dataset.id);
+    donnees.append('new_state', nouvelEtat);
+    if (nouvelEtat === 'rejete') {
+      const remarque = await demanderRemarque();
+      if (!remarque) return;
+      donnees.append('remark', remarque);
+    }
+    const rep = await fetch('{% url "update_ticket_state" %}', { method: 'POST', headers: { 'X-CSRFToken': csrf }, body: donnees });
+    const res = await rep.json();
+    if (res.status !== 'success') { alert(res.message); return; }
+    const source = f.closest('.colonne');
+    const poser = () => {
+      cible.querySelector('.vide')?.remove();
+      cible.querySelector('h2').after(f);
+      f.dataset.etat = nouvelEtat;
+      if (!source.querySelector('.fiche')) source.insertAdjacentHTML('beforeend', '<p class="vide">Aucun ticket</p>');
+      for (const c of [source, cible]) c.querySelector('[data-compte]').textContent = c.querySelectorAll('.fiche').length;
+    };
+    document.startViewTransition ? document.startViewTransition(poser) : poser();
+    f.classList.remove('posee'); void f.offsetWidth; f.classList.add('posee');
+    chargerStats();
+  }
 
-    <script src="{% static 'js/app.js' %}"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            fetch('/ticket-stats/')
-                .then(response => response.json())
-                .then(data => {
-                    new Chart(document.getElementById('ticketStatusChart'), {
-                        type: 'bar',
-                        data: {
-                            labels: ['En cours', 'Clôturé', 'Rejeté'],
-                            datasets: [{
-                                label: 'Nombre par Status',
-                                data: [data.traitement, data.cloture, data.rejete],
-                                backgroundColor: [
-                                    'rgba(54, 162, 235, 0.2)',
-                                    'rgba(75, 192, 192, 0.2)',
-                                    'rgba(255, 99, 132, 0.2)'
-                                ],
-                                borderColor: [
-                                    'rgba(54, 162, 235, 1)',
-                                    'rgba(75, 192, 192, 1)',
-                                    'rgba(255, 99, 132, 1)'
-                                ],
-                                borderWidth: 1
-                            }]
-                        },
-                        options: {
-                            scales: {
-                                y: {
-                                    beginAtZero: true
-                                }
-                            }
-                        }
-                    });
-                });
-
-            fetch('/ticket-type-percentage/')
-                .then(response => response.json())
-                .then(data => {
-                    new Chart(document.getElementById('ticketTypeChart'), {
-                        type: 'pie',
-                        data: {
-                            labels: ['Anomalies', 'Paramétrages', 'Informations'],
-                            datasets: [{
-                                label: '% of Tickets',
-                                data: [data.anomalies, data.parametrages, data.infos],
-                                backgroundColor: [
-                                    'rgba(255, 99, 132, 0.2)',
-                                    'rgba(54, 162, 235, 0.2)',
-                                    'rgba(255, 206, 86, 0.2)'
-                                ],
-                                borderColor: [
-                                    'rgba(255, 99, 132, 1)',
-                                    'rgba(54, 162, 235, 1)',
-                                    'rgba(255, 206, 86, 1)'
-                                ],
-                                borderWidth: 1
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false
-                        }
-                    });
-                });
-
-            fetch('/project-stats/')
-                .then(response => response.json())
-                .then(data => {
-                    const projectNames = Object.keys(data.project_data);
-                    const projectPercentages = Object.values(data.project_data);
-                    new Chart(document.getElementById('projectClosureChart'), {
-                        type: 'bar',
-                        data: {
-                            labels: projectNames,
-                            datasets: [{
-                                label: '% des Tickets Clôturés',
-                                data: projectPercentages,
-                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                                borderColor: 'rgba(75, 192, 192, 1)',
-                                borderWidth: 1
-                            }]
-                        },
-                        options: {
-                            scales: {
-                                y: {
-                                    beginAtZero: true
-                                }
-                            }
-                        }
-                    });
-                });
-        });
-    </script>
-
+  document.addEventListener('dragstart', e => {
+    fiche = e.target.closest('.fiche');
+    if (!fiche) return;
+    e.dataTransfer.effectAllowed = 'move';
+    const permis = transitions[fiche.dataset.etat] || [];
+    colonnes.forEach(c => c.classList.toggle(permis.includes(c.dataset.etat) ? 'cible' : 'interdite', c.dataset.etat !== fiche.dataset.etat));
+    requestAnimationFrame(() => fiche.classList.add('saisie'));
+  });
+  document.addEventListener('dragend', () => {
+    fiche?.classList.remove('saisie');
+    colonnes.forEach(c => c.classList.remove('cible', 'interdite'));
+  });
+  colonnes.forEach(c => {
+    c.addEventListener('dragover', e => { if (c.classList.contains('cible')) e.preventDefault(); });
+    c.addEventListener('drop', e => { e.preventDefault(); if (fiche && c.classList.contains('cible')) deplacer(fiche, c); });
+  });
+})();
+</script>
 {% endif %}
 {% endblock %}

@@ -1,24 +1,22 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
-from django.contrib.auth.models import User
-from .models import Admin, Membre, Ticket, Projet, food, Notification
 
-# Dé-enregistrement du modèle User si nécessaire
-admin.site.unregister(User)
+from .models import Admin, Comment, Membre, Notification, Projet, Ticket
 
-# Ré-enregistrement du modèle User avec un admin personnalisé si nécessaire
-@admin.register(User)
-class CustomUserAdmin(UserAdmin):
-    pass
 
-# Enregistrement des autres modèles
+@admin.register(Ticket)
+class TicketAdmin(admin.ModelAdmin):
+    list_display = ('Intitulé', 'projet', 'type', 'etat', 'membre', 'date_creation')
+    list_filter = ('etat', 'type', 'projet')
+    search_fields = ('Intitulé',)
+
+
+@admin.register(Projet)
+class ProjetAdmin(admin.ModelAdmin):
+    list_display = ('nom', 'date_debut', 'date_fin')
+    filter_horizontal = ('membres',)
+
+
 admin.site.register(Admin)
 admin.site.register(Membre)
-admin.site.register(Ticket)
-admin.site.register(Projet)
-
+admin.site.register(Comment)
 admin.site.register(Notification)
-admin.site.register(food)
-
-
-
